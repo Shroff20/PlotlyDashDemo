@@ -1,10 +1,6 @@
 import numpy as np
 import pandas as pd
-import plotly 
 import plotly.graph_objects as go
-import plotly.express as px
-import os
-
 
 
 #%% Make fake data
@@ -31,40 +27,97 @@ def get_fake_data():
 
     return df_data, df_metadata
 
-df_data, df_metadata = get_fake_data()
 
 
-print(df_data)
-print(df_metadata)
+
+
+def make_buttons(df_metadata, field_button):
+
+    fieldvals = set(df_metadata[field_button])
+    print(fieldvals)
+    buttons = []
+    
+    buttons.append(dict(label='all', method="update", args=[{"visible": True}]))
+    
+    for fieldval in fieldvals:
+        I = df_metadata[field_button] == fieldval
+        buttons.append(dict(label=fieldval, method="update", args=[{"visible": I}]))
+    
+    return buttons
+
 
 #%%
 
-fig = go.Figure()
+def make_figure_html(df_data, df_metadata, plot_text = 'figure header'):
+    fig = go.Figure()
+    for col in df_data.columns:
+        lp = go.Scatter(x=df_data.index, y=df_data[col], mode = 'lines')
+        fig.add_trace(lp)
+    
+    field_button = 'field_1'
+    buttons =  make_buttons(df_metadata, field_button)
+    
+    title=go.layout.Title(text = plot_text)
+    
+    updatemenus =  dict(buttons = buttons)
+    fig.update_layout(updatemenus=[updatemenus], title = title)
+    
+    
+    fig_html = fig.to_html()
+    
+    return fig_html
 
-for col in df_data.columns:
-    lp = go.Scatter(x=df_data.index, y=df_data[col], mode = 'lines')
-    fig.add_trace(lp)
+df_data, df_metadata = get_fake_data()
+print(df_data)
+print(df_metadata)
+
+fig_html_1 = make_figure_html(df_data, df_metadata, 'plot1')
+fig_html_2 = make_figure_html(df_data, df_metadata, 'plot2')
 
 
-field_button = 'field_1'
+html_header = """
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {background-color: powderblue;}
+h1   {color: blue;}
+p    {color: red;}
+<link rel="stylesheet" href="tmeplate.css">
+
+</style>
+</head>
+<body>
+    padding: 100px;
+"""
+
+html_header = """
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="template.css">
+</head>
+<body>
+"""
 
 
 
-fieldvals = set(df_metadata[field_button])
-print(fieldvals)
-buttons = []
-
-for fieldval in fieldvals:
-    I = df_metadata[field_button] == fieldval
-    buttons.append(dict(label=fieldval, method="update", args=[{"visible": I}]))
+html_footer = """
+</body>
+</html>
+"""
 
 
-updatemenus =  dict(buttons = buttons)
-fig.update_layout(updatemenus=[updatemenus])
+str_html1 = '<h1>Plots and Reports</h1>'
+str_html2 = '<h2>Plots and Reports</h2>'
 
-html_txt = fig.to_html('test2.html')
+
+all_html = [html_header, str_html1, fig_html_1, str_html2, fig_html_2, html_footer]
+all_html = "\n".join(all_html)
 
 with open('test1.html', 'w') as f:
-    f.write(html_txt)
+    f.write(all_html)
 
 print('done')
+
+
