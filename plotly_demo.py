@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-
+from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
+import matplotlib
 
 #%% Make fake data
 
@@ -12,20 +14,32 @@ def get_fake_data():
     field_1 = ['A1', 'A2', 'A3']
     field_2 = ['B1', 'B2', 'B3']
     field_3 = ['C1', 'C2', 'C3']
-    fields = dict(field_1 = field_1, field_2 = field_2, field_3= field_3)
+    flagged = [True, False, False, False]
     
-    df_data = pd.DataFrame(index = t)
+    fields = dict(field_1 = field_1, field_2 = field_2, field_3= field_3, flagged= flagged)
+    
+    df_data_1 = pd.DataFrame(index = t)
+    df_data_2 = pd.DataFrame(index = t)
+    
+    
+    
     np.random.seed(1)
-    for i in range(20):
+    for i in range(5):
         c1 = np.random.rand()
         c2 = np.random.rand()
-        df_data[f'case_{i}'] = c1*np.sin(c2*t + c1)
+        df_data_1[f'case_{i}'] = np.array(c1*np.sin(c2*t + c1), dtype = 'float32')
+        c1 = np.random.rand()
+        c2 = np.random.rand()
+        df_data_2[f'case_{i}'] = np.array(c1*np.exp(-c2*t + c1), dtype = 'float32')
     
-    df_metadata = pd.DataFrame(index = df_data.columns)
+    df_metadata = pd.DataFrame(index = df_data_1.columns)
     for field in fields:
         df_metadata[field] = np.random.choice(fields[field], len(df_metadata))
 
-    return df_data, df_metadata
+    df_metadata  = df_metadata.sort_values('flagged')
+    
+
+    return df_data_1, df_data_2, df_metadata
 
 
 
@@ -48,48 +62,60 @@ def make_buttons(df_metadata, field_button):
 
 #%%
 
-def make_figure_html(df_data, df_metadata, plot_text = 'figure header'):
-    fig = go.Figure()
-    for col in df_data.columns:
-        lp = go.Scatter(x=df_data.index, y=df_data[col], mode = 'lines')
-        fig.add_trace(lp)
+def make_figure_html(df_data_1, df_data_2, df_metadata, title):
+    #fig = go.Figure()
+    
+    subplot_titles = ('title 1', 'title 2')
+    
+    fig = make_subplots(rows = 1, cols = 2, subplot_titles = subplot_titles)
+    
+    
+    cmap = plt.cm.Pastel2.colors
+    hex_colors = [matplotlib.colors.to_hex(x) for x in cmap]
+    print(hex_colors)
+    
+    
+    for i,col in enumerate(df_metadata.index):
+        
+        is_flagged = df_metadata.loc[col, 'flagged']
+        print(is_flagged)
+        
+        i_color = np.mod(i, len(hex_colors))
+        
+        if is_flagged:
+            line=dict(color='blue', width=3)
+        else:
+            line=dict(color=hex_colors[i_color], width=2)
+        
+        lp = go.Scatter(x=df_data_1.index, y=df_data_1[col], mode = 'lines', name = col, line = line)
+        fig.add_trace(lp, row = 1, col = 1)
+        lp = go.Scatter(x=df_data_2.index, y=df_data_2[col], mode = 'lines', name = col, line = line)
+        fig.add_trace(lp, row = 1, col = 2)    
+    
     
     field_button = 'field_1'
     buttons =  make_buttons(df_metadata, field_button)
     
-    title=go.layout.Title(text = plot_text)
+    title=go.layout.Title(text = title)
+
     
     updatemenus =  dict(buttons = buttons)
-    fig.update_layout(updatemenus=[updatemenus], title = title)
+    fig.update_layout(updatemenus=[updatemenus], title = title,  legend={'traceorder': 'reversed'})
     
     
     fig_html = fig.to_html()
     
     return fig_html
 
-df_data, df_metadata = get_fake_data()
-print(df_data)
+df_data_1, df_data_2, df_metadata = get_fake_data()
+print(df_data_1)
+print(df_data_2)
 print(df_metadata)
 
-fig_html_1 = make_figure_html(df_data, df_metadata, 'plot1')
-fig_html_2 = make_figure_html(df_data, df_metadata, 'plot2')
+fig_html_1 = make_figure_html(df_data_1, df_data_2, df_metadata, 'fig1')
+fig_html_2 = make_figure_html(df_data_1, df_data_2, df_metadata, 'fig1')
 
 
-html_header = """
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-body {background-color: powderblue;}
-h1   {color: blue;}
-p    {color: red;}
-<link rel="stylesheet" href="tmeplate.css">
-
-</style>
-</head>
-<body>
-    padding: 100px;
-"""
 
 html_header = """
 <!DOCTYPE html>
@@ -98,6 +124,11 @@ html_header = """
     <link rel="stylesheet" type="text/css" href="template.css">
 </head>
 <body>
+
+<h1>Plots and Reports</h1>
+<p>This is an example paragraph.</p>
+<h1>Header</h1>
+<hr>
 """
 
 
@@ -108,11 +139,8 @@ html_footer = """
 """
 
 
-str_html1 = '<h1>Plots and Reports</h1>'
-str_html2 = '<h2>Plots and Reports</h2>'
 
-
-all_html = [html_header, str_html1, fig_html_1, str_html2, fig_html_2, html_footer]
+all_html = [html_header,  fig_html_1, fig_html_2, html_footer]
 all_html = "\n".join(all_html)
 
 with open('test1.html', 'w') as f:
@@ -120,4 +148,5 @@ with open('test1.html', 'w') as f:
 
 print('done')
 
+#%%
 
