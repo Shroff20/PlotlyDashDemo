@@ -96,6 +96,7 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
     #fig = go.Figure()
     
     subplot_titles = ('title 1', 'title 2')
+    hovertemplate='%{x:.1f},%{y:.1f}'
     
     dt = np.max(df_metadata['date'])-np.min(df_metadata['date'])
     date_range = (np.min(df_metadata['date'])- + dt/20  , np.max(df_metadata['date']) + dt/20 )
@@ -121,15 +122,15 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
             
         line=dict(color=cur_color, width=2)
         
-        lp = go.Scatter(x=df_data_1.index, y=df_data_1[col], mode = 'lines', name = col, line = line)
+        lp = go.Scatter(x=df_data_1.index, y=df_data_1[col], mode = 'lines', name = col, line = line, hovertemplate=hovertemplate)
         fig.add_trace(lp, row = 1, col = 1)
         trace_cases.append(col)
-        lp = go.Scatter(x=df_data_2.index, y=df_data_2[col], mode = 'lines', name = col, line = line)
+        lp = go.Scatter(x=df_data_2.index, y=df_data_2[col], mode = 'lines', name = col, line = line, hovertemplate=hovertemplate)
         fig.add_trace(lp, row = 1, col = 2)    
         trace_cases.append(col)
         marker=dict(color=cur_color, size=20)
  
-        lp = go.Scatter(x=[df_metadata.loc[col, 'date']], y=[0], mode = 'markers', marker = marker, showlegend=False)
+        lp = go.Scatter(x=[df_metadata.loc[col, 'date']], y=[0], name = col, mode = 'markers', marker = marker, showlegend=False, hovertemplate = '%{x}')
         fig.add_trace(lp, row = 2, col = 1)    
         trace_cases.append(col)
         
@@ -145,10 +146,9 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
     buttons =  make_buttons(df_metadata, field_button, trace_cases)
 
     updatemenus =  dict(buttons = buttons)
-    fig.update_layout(updatemenus=[updatemenus], title = title,  legend={'traceorder': 'reversed'}, template="plotly_white")
+    fig.update_layout(updatemenus=[updatemenus],  legend={'traceorder': 'reversed'}, template="plotly_white", margin = dict(t = 20))
         
     #fig.show()
-    title=go.layout.Title(text = title)
     fig_html = fig.to_html()
     
     return fig_html
@@ -163,9 +163,7 @@ fig_html_2 = make_figure_html(df_data_1, df_data_2, df_metadata, 'fig1')
 
 
 def wrap_in_card(html):
-    
     html = f'<div class="card">\n{html}\n</div>'
-    
     return html
 
 
@@ -173,17 +171,24 @@ def wrap_in_card(html):
 html_start = """
 <!DOCTYPE html>
 <html>
-<head>
-    <link rel="stylesheet" type="text/css" href="template.css">
-</head>
+<div class="head">
+    <link rel="stylesheet" type="text/css" href="dashboard_template.css">
+</div>
+
+
 <body>
+
+<div class="site_title">
+My Site Title
+</div>
+
 
 <h1>Plots and Reports</h1>
 <p>This is an example paragraph.</p>
 """
 
 html_H1 = """
-<h1>Header</h1>
+<h1_no_padding>HeaderTest2</h1_no_padding>
 """
 
 
