@@ -47,7 +47,7 @@ def get_fake_data():
     
     
     np.random.seed(1)
-    for i in range(500):
+    for i in range(100):
         c1 = np.random.rand()
         c2 = np.random.rand()
         df_data_1[f'case_{i}'] = np.array(c1*np.sin(c2*t + c1), dtype = 'float32')
@@ -105,11 +105,8 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
     
     trace_cases = []
 
-
-
     cmap = plt.cm.Pastel2.colors
     hex_colors = [matplotlib.colors.to_hex(x) for x in cmap]
-
 
     for i,col in enumerate(df_metadata.index):
         
@@ -118,9 +115,11 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
         i_color = np.mod(i, len(hex_colors))
         
         if is_flagged:
-            line=dict(color='blue', width=3)
+            cur_color = 'blue'
         else:
-            line=dict(color=hex_colors[i_color], width=2)
+            cur_color = hex_colors[i_color]
+            
+        line=dict(color=cur_color, width=2)
         
         lp = go.Scatter(x=df_data_1.index, y=df_data_1[col], mode = 'lines', name = col, line = line)
         fig.add_trace(lp, row = 1, col = 1)
@@ -128,31 +127,27 @@ def make_figure_html(df_data_1, df_data_2, df_metadata, title):
         lp = go.Scatter(x=df_data_2.index, y=df_data_2[col], mode = 'lines', name = col, line = line)
         fig.add_trace(lp, row = 1, col = 2)    
         trace_cases.append(col)
-        marker=dict(color='red', size=20)
+        marker=dict(color=cur_color, size=20)
  
         lp = go.Scatter(x=[df_metadata.loc[col, 'date']], y=[0], mode = 'markers', marker = marker, showlegend=False)
         fig.add_trace(lp, row = 2, col = 1)    
         trace_cases.append(col)
+        
     fig.update_layout(yaxis3 = dict(visible=False), xaxis3=dict(range=date_range))
         
         
-# fig.update_layout(plot_bgcolor = "white")
-# fig.update_layout(showlegend=False, height = 200)
-    
 
     lp = go.Scatter(x=date_range, y=(0,0), mode = 'lines', line = dict(color='black', width=2), showlegend=False)
     fig.add_trace(lp, row = 2,col = 1)   
     trace_cases.append('always_show')
     
-    
     field_button = 'field_1'
     buttons =  make_buttons(df_metadata, field_button, trace_cases)
 
-    
     updatemenus =  dict(buttons = buttons)
     fig.update_layout(updatemenus=[updatemenus], title = title,  legend={'traceorder': 'reversed'}, template="plotly_white")
         
-    fig.show()
+    #fig.show()
     title=go.layout.Title(text = title)
     fig_html = fig.to_html()
     
@@ -167,8 +162,15 @@ fig_html_1 = make_figure_html(df_data_1, df_data_2, df_metadata, 'fig1')
 fig_html_2 = make_figure_html(df_data_1, df_data_2, df_metadata, 'fig1')
 
 
+def wrap_in_card(html):
+    
+    html = f'<div class="card">\n{html}\n</div>'
+    
+    return html
 
-html_header = """
+
+
+html_start = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -178,20 +180,25 @@ html_header = """
 
 <h1>Plots and Reports</h1>
 <p>This is an example paragraph.</p>
+"""
+
+html_H1 = """
 <h1>Header</h1>
-<hr>
 """
 
 
 
-html_footer = """
+html_end = """
 </body>
 </html>
 """
 
 
+card1 =  wrap_in_card(html_H1 + '\n'+ fig_html_1)
+card2 =  wrap_in_card(html_H1 + '\n'+ fig_html_2)
 
-all_html = [html_header,  fig_html_1, fig_html_2, html_footer]
+
+all_html = [html_start, card1, card2, html_end]
 all_html = "\n".join(all_html)
 
 with open('test1.html', 'w') as f:
